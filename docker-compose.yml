@@ -1,0 +1,65 @@
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  application:
+    container_name: application_container
+    build: .
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    depends_on:
+      - postgres
+      - minio
+
+  minio:
+    container_name: minio_container
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    command: server --console-address ":9001" /data/
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: on-failure
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin
+    volumes:
+      - minio-storage:/data
+
+  prometheus:
+    container_name: prometheus_container
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    container_name: grafana_container
+    image: grafana/grafana:11.0.0
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
+  restarter:
+    container_name: restarter_container
+    image: docker:cli
+    volumes: [ "/var/run/docker.sock:/var/run/docker.sock" ]
+    command: [ "/bin/sh", "-c", "while true; do sleep 86400; docker restart application_container; done" ]
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  minio-storage:

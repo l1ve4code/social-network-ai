@@ -1,0 +1,12 @@
+# grafana/provisioning/dashboards/jvm.yaml
+apiVersion: 1
+
+providers:
+  - name: 'JVM'
+    folder: 'JVM'
+    type: file
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

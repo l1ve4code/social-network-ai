@@ -1,0 +1,1571 @@
+openapi: 3.0.0
+info:
+  title: social-network-ai
+  version: 1.0.0
+paths:
+  /auth/sign-up:
+    post:
+      summary: Регистрация клиента
+      operationId: signUpClient
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientAuthSignUpRequest'
+        required: true
+      responses:
+        '201':
+          description: Учетная запись успешно создана
+        '400':
+          description: Ошибка валидации данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientAuthSignUpErrorResponse'
+
+  /auth/sign-in:
+    post:
+      summary: Авторизация клиента
+      operationId: signInClient
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientAuthSignInRequest'
+        required: true
+      responses:
+        '200':
+          description: JWT-токен для обращения к endpoint-ам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientJwtResponse'
+        '400':
+          description: Не все поля были корректно заполнены
+        '404':
+          description: Указан неверный пароль или учетная запись не существует
+
+  /auth/password/recover/send:
+    post:
+      summary: Отправить ссылку для восстановления пароля на почту
+      operationId: sendPasswordRecoverLinkToClientEmail
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/sendPasswordRecoverLinkToClientEmailRequest'
+        required: true
+      responses:
+        '200':
+          description: Информация отправлена на e-mail
+        '400':
+          description: Код для восстановления пароля уже был отправлен
+        '404':
+          description: Учетная запись не найдена
+
+  /auth/password/recover/apply:
+    post:
+      summary: Применить восстановленный пароль
+      operationId: useClientRecoveredPassword
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/useClientRecoveredPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Пароль успешно изменен
+        '400':
+          description: Пароли не совпадают
+        '409':
+          description: Длина пароля < 8 символов
+        '404':
+          description: Код восстановления не был найден
+
+  /auth/refresh-token:
+    post:
+      summary: Обновление токена доступа клиента
+      operationId: refreshClientAccessToken
+      tags:
+        - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/refreshClientAccessTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: JWT-токен для обращения к endpoint-ам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientJwtResponse'
+        '400':
+          description: Не все поля были корректно заполнены
+        '404':
+          description: Передан неверный токен
+
+  /auth/validate:
+    get:
+      summary: Подтверждение email адреса
+      operationId: validateEmailAddress
+      parameters:
+        - name: token
+          in: query
+          description: Автоматически сгенерированный токен
+          required: true
+          schema:
+            type: string
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Учетная запись успешно подтверждена
+        '404':
+          description: Учетная запись уже была подтверждена или ссылка некорректная
+
+  /platform-workflow:
+    get:
+      summary: Получение данных для блока - "Как работать с платформой?"
+      operationId: getPlatformWorkflow
+      tags:
+        - Platform Workflow
+      responses:
+        '200':
+          description: Данные для информационных блоков
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPlatformWorkflowResponse'
+        '404':
+          description: Информация отсутствует
+
+  /client/info/only-client:
+    get:
+      summary: Получение информации по клиенту
+      operationId: getClientInfo
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Client
+      responses:
+        '200':
+          description: Информация о клиенте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientInfoResponse'
+
+  /client/info/only-tariff:
+    get:
+      summary: Получение информации о тарифе (может отсутствовать)
+      operationId: getClientTariffInfo
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Client
+      responses:
+        '200':
+          description: Информация о тарифе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientTariffResponse'
+
+  /client/info/only-statuses:
+    get:
+      summary: Получение состояния заполнености (направления, тем, публикаций, привязки аккаунта)
+      operationId: getClientStatusInfo
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Client
+      responses:
+        '200':
+          description: Информация о статусах
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientStatusResponse'
+        '403':
+          description: Ошибка обработки данных
+
+  /client/info/all:
+    get:
+      summary: Получение всей информации по клиенту (ФИО, Тариф, Заполненность профиля)
+      operationId: getAllClientInfo
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Client
+      responses:
+        '200':
+          description: Вся информация по клиенту (информация о тарифе может отсутствовать)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientInfoAllResponse'
+        '403':
+          description: Ошибка обработки данных
+
+  /settings/edit/name:
+    put:
+      summary: Изменение ФИО
+      operationId: changeClientName
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientSettingsEditNameRequest'
+        description: Оба поля должны быть заполнены
+        required: true
+      responses:
+        '200':
+          description: Изменения были успешно применены
+        '400':
+          description: Не все поля были корректно заполнены
+
+  /settings/edit/password:
+    post:
+      summary: Изменение пароля
+      operationId: changeClientPassword
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientSettingsEditPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Пароль был изменен
+        '400':
+          description: Ошибка валидации пароля
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientSettingsEditPasswordErrorResponse'
+
+  /settings/tenchat/send/phone:
+    post:
+      summary: Отправление номера телефона для привязки TenChat
+      operationId: sendTenChatPhoneNumber
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientSettingsTenchatSendPhoneRequest'
+        required: true
+      responses:
+        '200':
+          description: Код подтверждения был успешно отправлен
+        '400':
+          description: Ошибки валидации телефона со стороны TenChat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientSettingsTenchatSendPhoneErrorResponse'
+        '403':
+          description: Ошибка обработки данных от TenChat
+
+  /settings/tenchat/send/code:
+    post:
+      summary: Отправление кода подтверждения для привязки TenChat
+      operationId: sendTenChatValidationCode
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/clientSettingsTenchatSendCodeRequest'
+        required: true
+      responses:
+        '200':
+          description: Аккаунт был успешно привязан
+        '400':
+          description: Ошибки валидации кода со стороны TenChat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/clientSettingsTenchatSendCodeErrorResponse'
+        '403':
+          description: Ошибка обработки данных от TenChat
+
+  /direction:
+    get:
+      summary: Получение направления пользователя в рамках текущего тарифа
+      operationId: getClientDirection
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Direction
+      responses:
+        '200':
+          description: Текст текущего направления
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/publicationsDirectionResponse'
+        '404':
+          description: Направление не было найдено в рамках текущего тарифа
+    post:
+      summary: Сохранение направления пользователя в рамках текущего тарифа
+      operationId: setClientDirection
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Direction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/publicationsDirectionRequest'
+        required: true
+      responses:
+        '201':
+          description: Направление было успешно сохранено
+        '400':
+          description: Ошибки во время сохранения
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/publicationsDirectionErrorResponse'
+        '402':
+          description: Тариф не был оплачен
+
+  /themes:
+    get:
+      summary: Получение сгенерированных тем в рамках текущего тарифа
+      operationId: getClientLastGeneratedThemes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: Сгенерированные темы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/themesResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа темы не были найдены
+
+  /themes/approve:
+    post:
+      summary: Подтверждение сгенерированных тем в рамках текущего тарифа
+      operationId: approveGeneratedThemesForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: Темы были успешно согласованы
+        '400':
+          description: Темы уже были согласованы
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа темы для согласования не были найдены
+
+  /themes/generate:
+    post:
+      summary: Запуск генерации тем для клиента
+      operationId: generateThemesForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: Генерация тем была запущена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа направление клиента не было найдено
+        '406':
+          description: Проблемы с добавлением в очередь на генерацию
+        '409':
+          description: В рамках текущего тарифа лимит на генерации истек / достигнут максимум на кол-во генераций
+        '425':
+          description: Последняя генерация еще не была завершена
+
+  /themes/last-generation-id:
+    get:
+      summary: Получение ID последней генерации
+      operationId: getLastGenerationIdForThemes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: ID последней генерации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа ID последней генерации не был найден
+
+  /themes/status:
+    get:
+      summary: Получение промежуточного статуса о состоянии сгенерированности тем
+      operationId: getClientThemesGenerationStatus
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: generation-id
+          in: query
+          description: ID генерации
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Themes
+      responses:
+        '200':
+          description: Генерация тем была завершена
+        '202':
+          description: Темы еще генерируются
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: ID генерации не был найден
+
+  /tariffs:
+    get:
+      summary: Получение существующих тарифов для покупки
+      operationId: getActualTariffs
+      tags:
+        - Tariffs
+      responses:
+        '200':
+          description: Тарифы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actualTariffsResponse'
+        '404':
+          description: Тарифы не были найдены
+
+  /tariffs/buy/{tariff-id}:
+    get:
+      summary: Получение ссылки для покупки тарифа через банк-эквайринг
+      operationId: getPaymentLink
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: tariff-id
+          in: path
+          description: ID тарифа
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Tariffs
+      responses:
+        '200':
+          description: Ссылка для переадресации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPaymentLinkResponse'
+        '400':
+          description: Тариф уже куплен и действует
+        '404':
+          description: Такого тарифа не существует
+
+  /posts:
+    get:
+      summary: Получение сгенерированных постов в рамках текущего тарифа
+      operationId: getClientLastGeneratedPosts
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Posts
+      responses:
+        '200':
+          description: Сгенерированные посты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/postsResponse'
+        '402':
+          description: Тариф еще не был оплачен
+        '404':
+          description: В рамках текущего тарифа посты не были найдены
+
+  /posts/approve:
+    post:
+      summary: Подтверждение сгенерированных постов в рамках текущего тарифа
+      operationId: approveGeneratedPostsForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Posts
+      responses:
+        '200':
+          description: Посты были успешно согласованы
+        '400':
+          description: Посты уже были согласованы
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа посты для согласования не были найдены
+        '409':
+          description: Еще не все изображения были сгенерированы для постов
+
+  /posts/generate:
+    post:
+      summary: Запуск генерации постов по темам для клиента
+      operationId: generatePostsForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Posts
+      responses:
+        '200':
+          description: Генерация постов была запущена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа тем для постов найдено не было
+        '406':
+          description: Проблемы с добавлением в очередь на генерацию
+        '409':
+          description: В рамках текущего тарифа лимит на генерации истек
+
+  /posts/last-generation-id:
+    get:
+      summary: Получение ID последней генерации
+      operationId: getLastGenerationIdForPosts
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Posts
+      responses:
+        '200':
+          description: ID последней генерации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа ID последней генерации не был найден
+
+  /posts/status:
+    get:
+      summary: Получение промежуточного статуса о состоянии сгенерированности постов
+      operationId: getClientPostsGenerationStatus
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: generation-id
+          in: query
+          description: ID генерации
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Posts
+      responses:
+        '200':
+          description: Генерация постов была завершена
+        '202':
+          description: Посты еще генерируются
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: ID генерации не был найден
+
+  /post/image/{image-id}:
+    get:
+      summary: Получение изображения для поста
+      operationId: getClientPostImage
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: image-id
+          in: path
+          description: ID изображения
+          required: true
+          schema:
+            type: string
+      tags:
+        - Post
+      responses:
+        '200':
+          description: Изображение
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Изображение не было найдено или не принадлежит клиенту
+
+  /post/{post-id}:
+    get:
+      summary: Получение информации по определенному посту
+      operationId: getPostInfo
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: post-id
+          in: path
+          description: ID поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Post
+      responses:
+        '200':
+          description: Информация о посте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/getPostResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Пост не был найден
+    put:
+      summary: Редактирование поста пользователя в рамках текущего тарифа
+      operationId: editClientPost
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: post-id
+          in: path
+          description: ID поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/postEditRequest'
+        required: true
+      responses:
+        '200':
+          description: Пост был успешно изменен
+        '400':
+          description: Изображение принадлежит другому посту
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Пост или изображение не были найдены
+        '405':
+          description: Согласованные посты нельзя изменять
+        '409':
+          description: Пост не может быть без текста
+
+  /post/{post-id}/image/generate:
+    post:
+      summary: Генерация изображения для одного поста
+      operationId: generateImageForSpecificPost
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: post-id
+          in: path
+          description: ID поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Post
+      responses:
+        '200':
+          description: Генерация изображения для поста была запущена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: ID поста не был найден
+        '406':
+          description: Проблемы с добавлением в очередь на генерацию
+        '409':
+          description: В рамках текущего тарифа лимит на генерации истек / достигнут максимум на кол-во генераций
+        '425':
+          description: Последняя генерация еще не была завершена
+
+  /post/{post-id}/image/last-generation-id:
+    get:
+      summary: Получение ID последней генерации
+      operationId: getLastGenerationIdForPostImage
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: post-id
+          in: path
+          description: ID поста
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Post
+      responses:
+        '200':
+          description: ID последней генерации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/generationIdResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: В рамках текущего тарифа ID последней генерации не был найден
+        '409':
+          description: ID поста не был найден
+
+  /post/image/status:
+    get:
+      summary: Получение промежуточного статуса о состоянии сгенерированности изображения для одного поста
+      operationId: getClientPostImageGenerationStatus
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: generation-id
+          in: query
+          description: ID генерации
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Post
+      responses:
+        '200':
+          description: Изображение для поста сгенерировалось
+        '202':
+          description: Изображение для поста еще генерируется
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: ID генерации не был найден
+
+  /publications:
+    get:
+      summary: Получение всех публикаций клиента в рамках текущего тарифа
+      operationId: getPublicationsForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Publications
+      responses:
+        '200':
+          description: Список публикаций
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/publicationsResponse'
+        '402':
+          description: Тариф еще не был оплачен
+        '404':
+          description: В рамках текущего тарифа публикации не были найдены
+
+  /publications/auto:
+    post:
+      summary: Автоматически распределить посты по датам
+      operationId: autoSplitPostsByDateForClient
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Publications
+      responses:
+        '200':
+          description: Посты были успешно распределены по датам
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Нет постов для автоматического распределения
+        '409':
+          description: Посты уже были распределены
+
+  /publications/publication/{publication-id}:
+    get:
+      summary: Получение публикации в рамках текущего тарифа
+      operationId: getPublicationForClient
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: publication-id
+          in: path
+          description: ID публикации
+          required: true
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - Publications
+      responses:
+        '200':
+          description: Публикация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/publicationResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Публикация не найдена
+    put:
+      summary: Изменение публикации в рамках текущего тарифа
+      operationId: editPublicationForClient
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: publication-id
+          in: path
+          description: ID публикации
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/editPublicationForClientRequest'
+        required: true
+      tags:
+        - Publications
+      responses:
+        '200':
+          description: Публикация была успешно изменена
+        '400':
+          description: Ошибки при изменении публикации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/editPublicationForClientErrorResponse'
+        '402':
+          description: Тариф не был оплачен
+        '404':
+          description: Публикация не найдена
+
+  /audience/subscribes:
+    post:
+      summary: Изменение количества подписок на пользователей (в день)
+      operationId: setDailyAudienceSubscribes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Audience
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/setDailyAudienceSubscribesAndUnsubscribesRequest'
+      responses:
+        '200':
+          description: Ежедневное количество подписок было успешно изменено
+        '400':
+          description: В данный тарифный план не входит такое количество ежедневных подписок
+        '402':
+          description: Тариф не был оплачен
+
+  /audience/unsubscribes:
+    post:
+      summary: Изменение количества отписок на пользователей (в день)
+      operationId: setDailyAudienceUnsubscribes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Audience
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/setDailyAudienceSubscribesAndUnsubscribesRequest'
+      responses:
+        '200':
+          description: Ежедневное количество отписок было успешно изменено
+        '400':
+          description: В данный тарифный план не входит такое количество ежедневных отписок
+        '402':
+          description: Тариф не был оплачен
+
+components:
+  schemas:
+    generationIdResponse:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID генерации
+
+    clientAuthSignUpRequest:
+      required:
+        - email
+        - password
+        - passwordConfirmation
+      type: object
+      properties:
+        email:
+          type: string
+          description: Адрес электронной почты
+        password:
+          type: string
+          description: Пароль
+        passwordConfirmation:
+          type: string
+          description: Подтверждение пароля
+    clientAuthSignUpErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/clientAuthSignUpErrorEnum'
+    clientAuthSignUpErrorEnum:
+      type: string
+      enum:
+        # Аккаунт уже существует
+        - EMAIL_EXISTS
+        # Email адрес указан неверно
+        - EMAIL_NOT_VALID
+        # Общее кол-во символов в пароле < 8
+        - SMALL_LENGTH
+        # Переданные пароли не совпадают
+        - PASSWORDS_NOT_EQUALS
+        # Учетная запись не была создана
+        - NOT_CREATED
+
+    clientAuthSignInRequest:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+          description: Адрес электронной почты
+        password:
+          type: string
+          description: Пароль
+
+    sendPasswordRecoverLinkToClientEmailRequest:
+      required:
+        - email
+      type: object
+      properties:
+        email:
+          type: string
+          description: Адрес электронной почты
+
+    useClientRecoveredPasswordRequest:
+      required:
+        - recoverToken
+        - password
+        - passwordConfirmation
+      type: object
+      properties:
+        recoverToken:
+          type: string
+          description: Токен для изменения пароля
+        password:
+          type: string
+          description: Пароль
+        passwordConfirmation:
+          type: string
+          description: Подтверждение пароля
+
+    clientJwtResponse:
+      required:
+        - accessToken
+        - refreshToken
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT токен доступа
+        refreshToken:
+          type: string
+          description: Токен для обновления текущего токена доступа (действует 7-мь дней)
+
+    refreshClientAccessTokenRequest:
+      required:
+        - refreshToken
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Токен для обновления текущего токена доступа (действует 7-мь дней)
+
+    getPlatformWorkflowResponse:
+      type: array
+      description: Последовательность работы с платформой
+      items:
+        $ref: '#/components/schemas/platformWorkflowItem'
+
+    platformWorkflowItem:
+      required:
+        - title
+        - titleColor
+        - actions
+        - link
+      type: object
+      properties:
+        title:
+          type: string
+          description: Название блока (Регистрация, Подготовка контента, ...)
+        titleColor:
+          type: string
+          description: Цвет фона для названия блока (HEX)
+        actions:
+          type: array
+          description: Последовательность действий
+          items:
+            $ref: '#/components/schemas/actionItem'
+        link:
+          type: string
+          description: Ссылка на видео
+
+    actionItem:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: Действие
+
+    clientInfoAllResponse:
+      required:
+        - client
+        - statuses
+      type: object
+      properties:
+        client:
+          $ref: '#/components/schemas/clientInfo'
+        tariff:
+          $ref: '#/components/schemas/tariffInfo'
+        statuses:
+          $ref: '#/components/schemas/statusesInfo'
+
+    clientInfoResponse:
+      $ref: '#/components/schemas/clientInfo'
+    clientInfo:
+      required:
+        - name
+        - surname
+        - email
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя клиента
+        surname:
+          type: string
+          description: Фамилия клиента
+        email:
+          type: string
+          description: Email адрес
+
+    clientTariffResponse:
+      $ref: '#/components/schemas/tariffInfo'
+    tariffInfo:
+      required:
+        - name
+        - abilities
+        - daysLeft
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название тарифа
+        abilities:
+          type: array
+          description: Массив с описанием возможностей тарифа
+          items:
+            $ref: '#/components/schemas/ability'
+        daysLeft:
+          type: integer
+          description: Сколько еще будет активен тариф
+
+    clientStatusResponse:
+      $ref: '#/components/schemas/statusesInfo'
+    statusesInfo:
+      required:
+        - direction
+        - themes
+        - publications
+        - tenchat
+      type: object
+      properties:
+        direction:
+          type: boolean
+          description: Заполненность вкладки направление
+        themes:
+          type: boolean
+          description: Заполненность вкладки темы
+        publications:
+          type: boolean
+          description: Заполненность вкладки публикации
+        tenchat:
+          type: boolean
+          description: Привязанность аккаунта TenChat
+
+    clientSettingsEditNameRequest:
+      required:
+        - name
+        - surname
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя пользователя
+        surname:
+          type: string
+          description: Фамилия пользователя
+
+    clientSettingsEditPasswordRequest:
+      required:
+        - currentPassword
+        - newPassword
+        - newPasswordConfirmation
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          description: Текущий пароль
+        newPassword:
+          type: string
+          description: Новый пароль
+        newPasswordConfirmation:
+          type: string
+          description: Подтверждение пароля
+    clientSettingsEditPasswordErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/clientSettingsEditPasswordError'
+    clientSettingsEditPasswordError:
+      type: string
+      enum:
+        # Переданный пароль уже используется
+        - NEW_PASSWORD_ALREADY_USES
+        # Новые пароли не равны
+        - NEW_PASSWORDS_NOT_EQUALS
+        # Новый пароль слабый
+        - NEW_PASSWORD_IS_WEAK
+        # Текущий пароль введен неверно
+        - CURRENT_PASSWORD_NOT_VALID
+
+    clientSettingsTenchatSendPhoneRequest:
+      required:
+        - phone
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Номер телефона
+    clientSettingsTenchatSendPhoneErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/clientSettingsTenchatSendPhoneError'
+    clientSettingsTenchatSendPhoneError:
+      type: string
+      enum:
+        # Указан неверный номер телефона
+        - PHONE_NOT_VALID
+        # Анти-спам, подождите некоторое время перед следующим запросом
+        - PHONE_WAIT
+        # Неожиданный ответ от TenChat
+        - UNEXPECTED_PHONE_RESPONSE
+        # Множество попыток авторизации
+        - TOO_MANY_PHONE_ATTEMPTS
+        # Клиент уже авторизован в TenChat
+        - CLIENT_PHONE_ALREADY_AUTHORIZED
+
+    clientSettingsTenchatSendCodeRequest:
+      required:
+        - code
+        - phone
+      type: object
+      properties:
+        phone:
+          type: string
+          description: Номер телефона
+        code:
+          type: string
+          description: Код подтверждения
+    clientSettingsTenchatSendCodeErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/clientSettingsTenchatSendCodeError'
+    clientSettingsTenchatSendCodeError:
+      type: string
+      enum:
+        # Код подтверждения неверный
+        - CODE_NOT_VALID
+        # Время жизни кода подтверждения истекло
+        - CODE_LIFE_TIME_END
+        # Неожиданный ответ от TenChat
+        - UNEXPECTED_CODE_RESPONSE
+        # Множество попыток авторизации
+        - TOO_MANY_CODE_ATTEMPTS
+
+    publicationsDirectionRequest:
+      $ref: '#/components/schemas/publicationsDirection'
+    publicationsDirectionErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/publicationsDirectionError'
+    publicationsDirectionError:
+      type: string
+      enum:
+        # Слишком мало слов (меньше 10-ти символов)
+        - TOO_LOW_WORDS
+        # В рамках текущего тарифа описание уже существует
+        - ALREADY_SAVED
+    publicationsDirectionResponse:
+      $ref: '#/components/schemas/publicationsDirection'
+    publicationsDirection:
+      required:
+        - text
+      type: object
+      properties:
+        text:
+          type: string
+          description: Направление клиента
+
+    themesResponse:
+      required:
+        - themes
+      type: object
+      properties:
+        themes:
+          type: array
+          items:
+            $ref: '#/components/schemas/theme'
+          description: Список тем
+    theme:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: Текст темы
+
+    actualTariffsResponse:
+      required:
+        - tariffs
+      type: object
+      properties:
+        tariffs:
+          type: array
+          items:
+            $ref: '#/components/schemas/actualTariff'
+          description: Список тарифов
+    actualTariff:
+      required:
+        - id
+        - name
+        - abilities
+        - price
+        - discountPrice
+        - isPromo
+      type: object
+      properties:
+        id:
+          type: integer
+          description: ID тарифа
+          format: int64
+        name:
+          type: string
+          description: Название тарифа
+        abilities:
+          type: array
+          description: Массив с описанием возможностей тарифа
+          items:
+            $ref: '#/components/schemas/ability'
+        price:
+          type: integer
+          description: Стоимость тарифа
+          format: int64
+        discountPrice:
+          type: integer
+          description: Стоимость тарифа до применения скидки
+          format: int64
+        isPromo:
+          type: boolean
+          description: Выделение тарифа среди других
+    ability:
+      required:
+        - key
+        - value
+      type: object
+      properties:
+        key:
+          type: string
+          description: Название возможности
+        value:
+          required:
+            - text
+          type: object
+          properties:
+            text:
+              type: string
+              description: Описание возможности
+            color:
+              type: string
+              description: Цвет описания (HEX)
+              default: 3E3E3E
+
+    getPaymentLinkResponse:
+      required:
+        - link
+      type: object
+      properties:
+        link:
+          type: string
+          description: Ссылка для переадресации
+
+    postsResponse:
+      required:
+        - posts
+      type: object
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/post'
+          description: Список постов
+    post:
+      required:
+        - id
+        - name
+        - description
+        - forPublish
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID поста
+        name:
+          type: string
+          description: Текст темы
+        description:
+          type: string
+          description: Текст поста
+        images:
+          type: array
+          description: Список доступных изображений в рамках поста
+          items:
+            $ref: '#/components/schemas/imageInfo'
+        forPublish:
+          type: boolean
+          description: Выбран для публикации или нет
+
+    imageInfo:
+      required:
+        - imageId
+        - isUsing
+      type: object
+      description: Данные об изображении
+      properties:
+        imageId:
+          type: string
+          description: ID изображения
+        isUsing:
+          type: boolean
+          description: Выбрано ли изображение пользователем
+
+    getPostResponse:
+      $ref: '#/components/schemas/post'
+
+    postEditRequest:
+      required:
+        - text
+        - imageId
+      type: object
+      properties:
+        text:
+          type: string
+          description: Текст поста
+        imageId:
+          type: string
+          description: ID изображения
+
+    publicationsResponse:
+      required:
+        - publications
+      type: object
+      properties:
+        publications:
+          type: array
+          items:
+            $ref: '#/components/schemas/publication'
+          description: Список публикаций
+    publicationResponse:
+      $ref: '#/components/schemas/publication'
+    publication:
+      required:
+        - id
+        - date
+        - time
+        - text
+        - status
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID поста
+        date:
+          type: string
+          description: Дата публикации
+        time:
+          type: string
+          description: Время публикации
+        text:
+          type: string
+          description: Текст темы
+        status:
+          $ref: '#/components/schemas/publicationStatus'
+    publicationStatus:
+      type: string
+      enum:
+        - PUBLISHED
+        - SCHEDULED
+
+    editPublicationForClientRequest:
+      required:
+        - date
+        - time
+      type: object
+      properties:
+        date:
+          type: string
+          description: Дата публикации
+        time:
+          type: string
+          description: Время публикации
+    editPublicationForClientErrorResponse:
+      required:
+        - error
+      type: object
+      properties:
+        description:
+          type: string
+          description: Дополнительная информация об ошибке
+        error:
+          $ref: '#/components/schemas/editPublicationForClientError'
+    editPublicationForClientError:
+      type: string
+      enum:
+        # Уже опубликовано
+        - ALREADY_PUBLISHED
+        # Новая дата выходит за границы текущего тарифа
+        - PUBLICATION_DATE_OUT_OF_TARIFF_BORDERS
+        # Нельзя перенести время публикации в прошлое
+        - PAST_PUBLICATION_FORBIDDEN
+        # Указана неверная дата
+        - PUBLICATION_DATE_NOT_VALID
+        # Указано неверное времяы
+        - PUBLICATION_TIME_NOT_VALID
+
+    setDailyAudienceSubscribesAndUnsubscribesRequest:
+      required:
+        - amount
+      type: object
+      properties:
+        amount:
+          type: integer
+          format: int64
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

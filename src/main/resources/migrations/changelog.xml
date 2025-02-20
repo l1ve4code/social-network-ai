@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog logicalFilePath="changelog.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.23.xsd">
+
+    <!--SCHEMA-->
+    <include file="schema/social_network.sql" relativeToChangelogFile="true"/>
+    <include file="schema/quartz.sql" relativeToChangelogFile="true"/>
+
+    <!--TABLE-->
+    <include file="table/confirmation_token.sql" relativeToChangelogFile="true"/>
+    <include file="table/refresh_token.sql" relativeToChangelogFile="true"/>
+    <include file="table/recover_token.sql" relativeToChangelogFile="true"/>
+    <include file="table/tenchat_credentials.sql" relativeToChangelogFile="true"/>
+    <include file="table/tariff.sql" relativeToChangelogFile="true"/>
+    <include file="table/client.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_directions.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_post_images.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_posts.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_raw_images_processing_queue.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_raw_posts_processing_queue.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_raw_themes_processing_queue.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_tariffs.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_themes.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_publications.sql" relativeToChangelogFile="true"/>
+    <include file="table/environment.sql" relativeToChangelogFile="true"/>
+    <include file="table/audience.sql" relativeToChangelogFile="true"/>
+    <include file="table/client_payment.sql" relativeToChangelogFile="true"/>
+    <include file="table/platform_workflow.sql" relativeToChangelogFile="true"/>
+
+    <!--PRODUCTION-DATA-CHANGE-->
+    <include file="production/changelog.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
